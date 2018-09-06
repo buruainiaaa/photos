@@ -9,10 +9,13 @@
 
 <div id="drop_area" style="width: 100%;height: 100%; background-color: azure">
 
-
 <#if list??>
     <#list list as l>
-        <img src="/show?fileName=${l}" style="width: 200px"/>
+      <#if date??>
+          <img src="/show?fileName=${l}&date=${date}" style="width: 200px"/>
+      <#else>
+          <img src="/show?fileName=${l}" style="width: 200px"/>
+      </#if>
     </#list>
 </#if>
 

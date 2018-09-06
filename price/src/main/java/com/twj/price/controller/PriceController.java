@@ -2,6 +2,7 @@ package com.twj.price.controller;
 
 import com.twj.price.utils.FileUtils;
 
+import freemarker.template.utility.DateUtil;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
@@ -12,6 +13,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -23,10 +25,8 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Controller
 public class PriceController {
@@ -40,6 +40,8 @@ public class PriceController {
 
     @Value("${web.upload-path}")
     private String path;
+
+    String string="11";
 
     /**
      * 跳转到文件上传页面
@@ -55,11 +57,25 @@ public class PriceController {
      * @return
      */
     @RequestMapping("info")
-    public String show(HttpServletRequest request, ServletResponse response,Map<String, Object> map){
+    public String show(HttpServletRequest request, ServletResponse response,String date,Map<String, Object> map){
+        String pathBak="";
         ArrayList<String> files = new ArrayList<String>();
-        File file = new File(path);
+        if(!StringUtils.isEmpty(date)){
+            map.put("date",date);
+            pathBak=path+date+System.getProperty("file.separator");
+        }else{
+            Date time=new Date();
+            SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyyMMdd");
+            String s=simpleDateFormat.format(time);
+            pathBak=path+s+System.getProperty("file.separator");
+        }
+        File file = new File(pathBak);
         File[] tempList = file.listFiles();
-
+        if(file==null||tempList==null||tempList.length<=0){
+            map.put("list",null);
+            map.put("count",0);
+            return "info";
+        }
         for (int i = 0; i < tempList.length; i++) {
             if (tempList[i].isFile()) {
                 files.add(tempList[i].getName());
@@ -79,13 +95,18 @@ public class PriceController {
      */
     @RequestMapping("fileUpload")
     public String upload(@RequestParam("fileName") MultipartFile [] files,@RequestParam("count")Integer count, Map<String, Object> map){
+        String pathBak="";
+        Date time=new Date();
+        SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyyMMdd");
+        String s=simpleDateFormat.format(time);
+        pathBak=path+s+System.getProperty("file.separator");
 
         // 上传成功或者失败的提示
         String msg = "";
 
         List<String> list=new ArrayList<>();
         for (MultipartFile img : files) {
-            if (FileUtils.upload(img, path, img.getOriginalFilename())){
+            if (FileUtils.upload(img, pathBak, img.getOriginalFilename())){
                 // 上传成功，给出页面提示
                 list.add(img.getOriginalFilename());
             }else {
@@ -108,6 +129,11 @@ public class PriceController {
      */
     @RequestMapping("tuozhuai")
     public String tuozhuai(HttpServletRequest request, ServletResponse response, Map<String, Object> map) throws FileUploadException {
+        String pathBak="";
+        Date time=new Date();
+        SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyyMMdd");
+        String s=simpleDateFormat.format(time);
+        pathBak=path+s+System.getProperty("file.separator");
 
         String contentType = request.getContentType();
         List<MultipartFile> files = null;
@@ -119,7 +145,7 @@ public class PriceController {
 
         List<String> list = new ArrayList<>();
         for (MultipartFile img : files) {
-            if (FileUtils.upload(img, path, img.getOriginalFilename())) {
+            if (FileUtils.upload(img, pathBak, img.getOriginalFilename())) {
                 // 上传成功，给出页面提示
                 list.add(img.getOriginalFilename());
             } else {
@@ -136,11 +162,21 @@ public class PriceController {
      * @return
      */
     @RequestMapping("show")
-    public ResponseEntity showPhotos(String fileName){
+    public ResponseEntity showPhotos(String fileName,String date){
+        String pathBak="";
+        if(!StringUtils.isEmpty(date)){
+            pathBak=path+date+System.getProperty("file.separator");
+        }else{
+            Date time=new Date();
+            SimpleDateFormat simpleDateFormat=new SimpleDateFormat("yyyyMMdd");
+            String s=simpleDateFormat.format(time);
+            pathBak=path+s+System.getProperty("file.separator");
+        }
+
 
         try {
             // 由于是读取本机的文件，file是一定要加上的， path是在application配置文件中的路径
-            return ResponseEntity.ok(resourceLoader.getResource("file:" + path + fileName));
+            return ResponseEntity.ok(resourceLoader.getResource("file:" + pathBak + fileName));
         } catch (Exception e) {
             return ResponseEntity.notFound().build();
         }
